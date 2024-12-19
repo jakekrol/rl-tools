@@ -47,7 +47,7 @@ def main():
 
 
     h = ax.hist(Y, \
-                bins=args.bins, \
+                bins=int(args.bins), \
                 density=args.density,
                 log=args.ylog, \
                 histtype='bar', \
