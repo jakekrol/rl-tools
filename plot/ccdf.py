@@ -46,6 +46,11 @@ def main():
     
     h = ax.plot(X,Y)
 
+    if not args.ylabel:
+        ax.set_ylabel('$Pr(X>x)$')
+    if not args.xlabel:
+        ax.set_xlabel('$x$')
+
     plot_helper.format_ax(ax, args)
 
     plt.tight_layout()
