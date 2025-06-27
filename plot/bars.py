@@ -16,7 +16,7 @@ def get_args():
                         help="line width")
 
     parser.add_argument("--bar_color",
-                        default="bcack",
+                        default="black",
                         help="Bar color")
 
     return parser.parse_args()
@@ -29,8 +29,8 @@ def main():
     for l in sys.stdin:
         a = l.rstrip().split()
         if len(a) == 2:
-            X.append(int(a[0]))
-            Y.append(int(a[1]))
+            X.append((a[0]))
+            Y.append(float(a[1]))
         else:
             Y.append(int(a[0]))
 
@@ -49,8 +49,10 @@ def main():
                    [0,Y[i]],
                    color=bar_color[i])
     else:
-        for i in range(len(X)):
-            ax.bar( [X[i],X[i]], [0,Y[i]], color=bar_color)
+        # ax.bar(X, Y, color=bar_color)
+        # rotate the x-ticks 
+        ax.bar(X, Y, color=bar_color, width=0.5)
+        ax.set_xticklabels(X, rotation=45, ha='right')
 
 
     plot_helper.format_ax(ax, args)
