@@ -91,6 +91,7 @@ def format_ax(ax, args):
 
     if args.annotate:
         for vals in  args.annotate.split(','):
+            print(vals)
             val = vals.split(':')
             x_min = ax.get_xlim()[0]
             x_max = ax.get_xlim()[1]

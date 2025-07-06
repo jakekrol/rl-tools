@@ -11,6 +11,8 @@ def main():
     parser.add_argument('--sep', default='\t', help='Column separator (default: tab)')
     parser.add_argument('-t', '--title', type=str, default=None, help='Plot title')
     parser.add_argument('-x', '--xticklabels', type=str, default=None, help='Comma-separated list of x tick labels')
+    parser.add_argument('-y', '--ylabel', type=str, default='Values', help='Y-axis label')
+    parser.add_argument('-f', '--fontsize', type=int, default=20, help='Font size for labels and title')
     args = parser.parse_args()
 
     header = 0 if args.header else None
@@ -33,13 +35,14 @@ def main():
     # Set custom x-tick labels if provided
     if args.xticklabels:
         labels = [label.strip() for label in args.xticklabels.split(',')]
-        ax.set_xticklabels(labels, rotation=45, ha='right')
+        ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=int(args.fontsize * 0.8))
     else:
-        plt.xticks(rotation=45, ha='right')
+        plt.xticks(rotation=45, ha='right', fontsize=int(args.fontsize * 0.8))
 
-    # Set title if provided
     if args.title:
-        plt.title(args.title)
+        plt.title(args.title, fontsize=args.fontsize)
+    if args.ylabel:
+        plt.ylabel(args.ylabel, fontsize=args.fontsize)
 
     plt.tight_layout()
     plt.savefig(args.output)
