@@ -17,8 +17,8 @@ def get_args():
     parser.add_argument('-r', '--rlabel', type=str, default='right axis (right)')
     parser.add_argument('-o', '--output_file', type=str, default='ternary_plot.png',
                         help='Output file name for the plot.')
-
-
+    parser.add_argument('-n', '--normalize', action='store_true',
+                        help='Normalize each row so values sum to 1.')
     return parser.parse_args()
 
 def main():
@@ -33,21 +33,24 @@ def main():
     c=[]
     for l in sys.stdin:
         a = l.strip().split()
-        if len(a) == 3:
-            x.append(float(a[0]))
-            y.append(float(a[1]))
-            z.append(float(a[2]))
-        elif len(a) == 4:
-            x.append(float(a[0]))
-            y.append(float(a[1]))
-            z.append(float(a[2]))
-            c.append((a[3]))
+        if len(a) == 3 or len(a) == 4:
+            vals = [float(a[0]), float(a[1]), float(a[2])]
+            if args.normalize:
+                row_sum = sum(vals)
+                if row_sum <= 0:
+                    raise ValueError(f"Row sum is <= 0, cannot normalize: {a}")
+                vals = [v / row_sum for v in vals]
+            x.append(vals[0])
+            y.append(vals[1])
+            z.append(vals[2])
+            if len(a) == 4:
+                c.append(a[3])
         else:
             raise ValueError(f'Please provide 3 or 4 columns of data, got {len(a)} columns.')
     if not c:
         c = None
         ax = fig.add_subplot(1,1,1, projection="ternary")
-        pc = ax.scatter(x, y, z)
+        pc = ax.scatter(x, y, z, s=35, alpha=0.35)
     else:
         # get list of unique categories
         unique_cats = list(dict.fromkeys(c))
@@ -62,7 +65,7 @@ def main():
             idx = [i for i, val in enumerate(c) if val == cat]
             # scatter points with this category
             ax.scatter([x[i] for i in idx], [y[i] for i in idx], [z[i] for i in idx],
-                       marker=marker_map[cat], label=str(cat))
+                       marker=marker_map[cat], label=str(cat), s=35, alpha=0.35)
         ax.legend(title="Category", loc='center left', bbox_to_anchor=(1.15, 0.5))
     # scatter
     ax.set_tlabel(args.tlabel)
