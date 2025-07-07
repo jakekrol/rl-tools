@@ -19,6 +19,9 @@ def get_args():
                         help='Output file name for the plot.')
     parser.add_argument('-n', '--normalize', action='store_true',
                         help='Normalize each row so values sum to 1.')
+    parser.add_argument('--tline',default=None, help='line for top axis')
+    parser.add_argument('--lline',default=None, help='line for left axis')
+    parser.add_argument('--rline',default=None, help='line for right axis')
     return parser.parse_args()
 
 def main():
@@ -47,6 +50,8 @@ def main():
                 c.append(a[3])
         else:
             raise ValueError(f'Please provide 3 or 4 columns of data, got {len(a)} columns.')
+    ### plot
+    # handle categories
     if not c:
         c = None
         ax = fig.add_subplot(1,1,1, projection="ternary")
@@ -65,15 +70,27 @@ def main():
             idx = [i for i, val in enumerate(c) if val == cat]
             # scatter points with this category
             ax.scatter([x[i] for i in idx], [y[i] for i in idx], [z[i] for i in idx],
-                       marker=marker_map[cat], label=str(cat), s=35, alpha=0.35)
+                       marker=marker_map[cat], label=str(cat), s=20, alpha=0.35)
         ax.legend(title="Category", loc='center left', bbox_to_anchor=(1.15, 0.5))
-    # scatter
+    # labels
     ax.set_tlabel(args.tlabel)
     ax.set_llabel(args.llabel)
     ax.set_rlabel(args.rlabel)
+    # limits
+    ax.set_ternary_lim(
+    -0.05, 1.05,  # tmin, tmax
+    -0.05, 1.05,  # lmin, lmax
+    -0.05, 1.05,  # rmin, rmax
+    )
+    # lines
+    if args.tline:
+        ax.axhline(y=float(args.tline), color='red', linestyle='--', label='Top Line')
+    if args.lline:
+        ax.axvline(x=float(args.lline), color='blue', linestyle='--', label='Left Line')
+    if args.rline:
+        ax.axvline(x=float(args.rline), color='green', linestyle='--', label='Right Line')
+
     plt.tight_layout()
     plt.savefig(args.output_file, dpi=300)
-    # plt.savefig(args.output_file, transparent=args.transparent, dpi=300)
-
 if __name__ == '__main__':
     main()
