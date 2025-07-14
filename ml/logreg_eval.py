@@ -182,7 +182,7 @@ def main():
     if args.false_negatives:
         # augmented data with false negatives
         fn = np.ones(args.false_negatives,dtype=np.int64)
-        fn_pred = np.zeros(args.false_negatives, dtype=np.float64)
+        fn_pred = np.full(args.false_negatives, 0, dtype=np.float64)
 
         # full data
         adj_y = np.concatenate([y, fn])
