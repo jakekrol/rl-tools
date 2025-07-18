@@ -2,6 +2,8 @@
 import argparse
 import numpy as np
 import pandas as pd
+import re
+import sys
 
 parser = argparse.ArgumentParser(description='Standard scale a data matrix')
 parser.add_argument('-i', '--input', type=str, required=True, help='Input file with data matrix')
@@ -11,9 +13,20 @@ parser.add_argument('--header', action='store_true', help='Indicate that the fir
 parser.add_argument('-s', '--stats', type=str, default=None, help='File to save statistics (mean and std) for each column')
 args = parser.parse_args()
 
+if args.columns:
+    col_idx = []
+    for part in args.columns.split(','):
+        if '-' in part:
+            start, end = map(int, part.split('-'))
+            col_idx.extend(range(start, end + 1))
+        else:
+            col_idx.append(int(part))
+    col_idx.sort()
+    print(f"Column indices to standardize: {col_idx}")
+
 df = pd.read_csv(args.input, sep='\t', header=0 if args.header else None)
 if args.columns:
-    cols = args.columns.split(',')
+    cols = [df.columns[i] for i in col_idx]
     df = df[cols]
 else:
     cols = df.columns.tolist()

@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument('-f', '--font_size', type=int, default=20, help='Font size for plots')
     parser.add_argument('-fns', '--false_negatives', type=int, help='Number of false negatives to include when reporting results', default=None)
     parser.add_argument('-p', '--cpus', type=int, default=1, help='Number of CPU cores to use (default: 1)')
+    parser.add_argument('--tune_metric', type=str, choices=['auroc', 'auprc'], default='auroc', help='Metric to tune hyperparameters (auroc or auprc, default: auroc)')
     return parser.parse_args()
 
 def random_hyperparams(seed):
@@ -125,13 +126,13 @@ def main():
 
     # Hyperparameter search
     hp_list = random_hyperparams(args.seed)
-    best_auc = -np.inf
+    best_score = -np.inf
     best_hp = None
     best_model = None
     best_cv_pred = None
     best_cv_true = None
 
-    hp_Cs, hp_l1s, hp_aucs = [], [], []
+    hp_Cs, hp_l1s, hp_scores = [], [], []
     print("Searching hyperparameters...")
     for idx, (C, l1) in enumerate(hp_list):
         cv = StratifiedKFold(n_splits=args.kfolds, shuffle=True, random_state=args.seed)
@@ -152,18 +153,21 @@ def main():
             cv_true.append(y[test_idx])
         cv_pred = np.concatenate(cv_pred)
         cv_true = np.concatenate(cv_true)
-        auc = roc_auc_score(cv_true, cv_pred)
+        if args.tune_metric == 'auroc':
+            score = roc_auc_score(cv_true, cv_pred)
+        else:
+            score = average_precision_score(cv_true, cv_pred)
         hp_Cs.append(C)
         hp_l1s.append(l1)
-        hp_aucs.append(auc)
-        if auc > best_auc:
-            best_auc = auc
+        hp_scores.append(score)
+        if score > best_score:
+            best_score = score
             best_hp = (C, l1)
             best_cv_pred = cv_pred
             best_cv_true = cv_true
-        print(f"HP {idx+1}/{len(hp_list)}: C={C:.5g}, l1_ratio={l1:.3f}, AUROC={auc:.4f}")
+        print(f"HP {idx+1}/{len(hp_list)}: C={C:.5g}, l1_ratio={l1:.3f}, {args.tune_metric.upper()}={score:.4f}")
 
-    print(f"\nBest hyperparameters: C={best_hp[0]:.5g}, l1_ratio={best_hp[1]:.3f}, CV AUROC={best_auc:.4f}")
+    print(f"\nBest hyperparameters: C={best_hp[0]:.5g}, l1_ratio={best_hp[1]:.3f}, CV {args.tune_metric.upper()}={best_score:.4f}")
 
     # Final model on full data
     # now, we can scale all data at once
@@ -201,7 +205,7 @@ def main():
     plot_pr(y, full_pred, args.output + ".full_pr.png", "Full Data PR")
     plot_roc(best_cv_true, best_cv_pred, args.output + ".cv_roc.png", "CV ROC (best HP)")
     plot_pr(best_cv_true, best_cv_pred, args.output + ".cv_pr.png", "CV PR (best HP)")
-    plot_hp_heatmap(hp_Cs, hp_l1s, hp_aucs, args.output + ".hp_heatmap.png")
+    plot_hp_heatmap(hp_Cs, hp_l1s, hp_scores, args.output + ".hp_heatmap.png")
     # ADJUSTED
     if args.false_negatives:
         # full
@@ -213,8 +217,9 @@ def main():
 
 
     # Print and save AUROC/AUPRC
+    cv_auroc = roc_auc_score(best_cv_true, best_cv_pred)
     cv_auprc = average_precision_score(best_cv_true, best_cv_pred)
-    print(f"CV AUROC (best HP): {best_auc:.4f}")
+    print(f"CV AUROC (best HP): {cv_auroc:.4f}")
     print(f"CV AUPRC (best HP): {cv_auprc:.4f}")
 
 
@@ -223,11 +228,13 @@ def main():
     df_out["pred_prob"] = full_pred
     df_out.to_csv(args.output, sep="\t", index=False)
 
-    # Save the final model coefficients
+    # Save the final model coefficients and bias term
+    bias_term = final_model.intercept_[0]
     coef_df = pd.DataFrame({
         "feature": feat_names,
         "coefficient": final_model.coef_[0]
     })
+    coef_df.loc[len(coef_df)] = ["bias", bias_term]
     coef_df.to_csv(args.output + ".coefs.tsv", sep="\t", index=False)
 
     # Barplot of coefficients
@@ -242,13 +249,14 @@ def main():
         "full_data_AUPRC": full_auprc,
         "full_data_adj_AUROC": adj_full_auc if args.false_negatives else None,
         "full_data_adj_AUPRC": adj_full_auprc if args.false_negatives else None,
-        "cv_best_AUROC": best_auc,
+        "cv_best_AUROC": cv_auroc,
         "cv_best_AUPRC": cv_auprc,
         "cv_best_adj_AUROC": best_adj_auc if args.false_negatives else None,
         "cv_best_adj_AUPRC": best_adj_auprc if args.false_negatives else None,
         "best_C": best_hp[0],
         "best_l1_ratio": best_hp[1],
-        "num_added_false_negatives": args.false_negatives if args.false_negatives else None
+        "num_added_false_negatives": args.false_negatives if args.false_negatives else None,
+        "tune_metric": args.tune_metric
     }])
     summary.to_csv(args.output + ".summary.tsv", sep="\t", index=False)
 
