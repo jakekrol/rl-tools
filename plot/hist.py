@@ -3,6 +3,7 @@ import sys
 import argparse
 import matplotlib.pyplot as plt
 import plot_helper
+import math
 
 def get_args():
     parser = argparse.ArgumentParser(description='Plot a line graph')
@@ -30,6 +31,10 @@ def get_args():
     parser.add_argument("--delim",
                         default="\t",
                         help="Field delimiter")
+    parser.add_argument("--log_trans",
+                        action="store_true",
+                        default=False,
+                        help="Log transform the data")
 
     return parser.parse_args()
 
@@ -45,6 +50,9 @@ def main():
             if len(a[args.column]) != 0 :
                 Y.append(float(a[args.column]))
 
+    if args.log_trans:
+        assert all(y >= 0 for y in Y), "All values must be non-negative for log transformation"
+        Y = [math.log(y+1,10) for y in Y]
 
     h = ax.hist(Y, \
                 bins=int(args.bins), \
@@ -55,6 +63,11 @@ def main():
                 color=args.bar_color)
 
     plot_helper.format_ax(ax, args)
+    if args.log_trans:
+        # update xticks to reflect log transformation
+        xticks = ax.get_xticks()
+        new_labels = [f"$10^{{{int(tick)}}}$" if tick >= 0 else "0" for tick in xticks]
+        ax.set_xticklabels(new_labels)
 
     plt.tight_layout()
     plt.savefig(args.output_file, transparent=args.transparent, dpi=300)
