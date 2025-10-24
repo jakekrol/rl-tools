@@ -14,6 +14,7 @@ parser.add_argument('-k', '--keys', type=str, required=True, help='Join keys (co
 parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
 parser.add_argument('-i', '--index', action='store_true', help='Tables have index column')
 parser.add_argument('-c', '--complement', action='store_true', help='Complement the join, i.e., keep only rows that are not in the other table')
+parser.add_argument('-d', '--drop_duplicates', action='store_true', help='Drop duplicate rows based on keys after join')
 args  = parser.parse_args()
 
 assert os.path.exists(args.input1), f'Input file 1 {args.input1} does not exist'
@@ -42,8 +43,6 @@ assert all([key in df_y.columns for key in args.keys]), f'Keys {args.keys} not f
 if args.type == 'left':
     if not args.complement:
         df_merged = pd.merge(df_x, df_y, on=args.keys, how='left')
-        df_merged.to_csv(args.output, sep='\t', index=False)
-        print(f'Left join completed. Output written to {args.output}')
     else:
         df_merged = pd.merge(df_x, df_y, on=args.keys, how='left', indicator=True)
         df_merged = df_merged[df_merged['_merge'] == 'left_only']
@@ -52,11 +51,11 @@ if args.type == 'left':
         df_merged = df_merged.loc[:, ~df_merged.columns.str.endswith('_y')]
         # rename columns with suffix _x to original names
         df_merged.columns = [col.replace('_x', '') if col.endswith('_x') else col for col in df_merged.columns]
-        df_merged.to_csv(args.output, sep='\t', index=False)
-        print(f'Left join with complement completed. Output written to {args.output}')
 elif args.type == 'outer':
     df_merged = pd.merge(df_x, df_y, on=args.keys, how='outer')
-    df_merged.to_csv(args.output, sep='\t', index=False)
-    print(f'Outer join completed. Output written to {args.output}')
 else: 
     raise ValueError(f'Join type "{args.type}" is not supported. Please use left join.')
+if args.drop_duplicates:
+    df_merged.drop_duplicates(subset=args.keys, inplace=True)
+df_merged.to_csv(args.output, sep='\t', index=False)
+print(f'{args.type} join completed. Output written to {args.output}')
