@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import pandas as pd
 
 def format_ax(ax, args):
     ax.spines['top'].set_visible(False)
@@ -74,8 +76,16 @@ def format_ax(ax, args):
             ax.axhline(y=hv, lw=0.5, color=args.axis_color)
 
     if args.axvline:
-        for hv in [float(x) for x in args.axvline.split(",")]:
-            ax.axvline(x=hv, lw=0.5, color=args.axis_color)
+        # if csv file
+        if os.path.exists(args.axvline):
+            df_vline = pd.read_csv(args.axvline, header=None, sep='\t')
+            for i,row in df_vline.iterrows():
+                ax.axvline(x=row[0], lw=0.5, color=row[1] if len(row) > 1 else args.axis_color,
+                alpha = row[2] if len(row) > 2 else 1.0)
+        else:
+            # otherwise asssume csv string
+            for hv in [float(x) for x in args.axvline.split(",")]:
+                ax.axvline(x=hv, lw=0.5, color=args.axis_color)
 
     if args.xticks:
         x_tick_lables = args.xticks.split(',') 

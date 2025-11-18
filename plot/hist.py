@@ -35,6 +35,9 @@ def get_args():
                         action="store_true",
                         default=False,
                         help="Log transform the data")
+    parser.add_argument("--alpha",
+                        type=float,
+                        default=1.0)
 
     return parser.parse_args()
 
@@ -60,7 +63,8 @@ def main():
                 log=args.ylog, \
                 histtype='bar', \
                 rwidth=0.8, \
-                color=args.bar_color)
+                color=args.bar_color,
+                alpha=args.alpha)   
 
     plot_helper.format_ax(ax, args)
     if args.log_trans:

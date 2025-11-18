@@ -56,6 +56,8 @@ def main():
 
 
     plot_helper.format_ax(ax, args)
+    # rotate x labels again
+    plt.xticks(rotation=45, ha='right')
 
     plt.tight_layout()
     plt.savefig(args.output_file, transparent=args.transparent, dpi=300)
