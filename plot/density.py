@@ -61,7 +61,16 @@ p.add_argument(
     default="Value",
     help="Y-axis label."
 )
-
+p.add_argument(
+    "--half_violin",
+    action="store_true",
+    help="Plot only one side of each violin (no mirror).",
+)
+p.add_argument(
+    "--show_median",
+    action="store_true",
+    help="Show median line in violin plots."
+)
 
 def load_values(path):
     data = np.loadtxt(path, dtype=float)
@@ -104,15 +113,38 @@ def main():
         label = names[idx] if names is not None else os.path.basename(path)
         labels.append(label)
 
+    # Pre-compute medians for optional custom median lines
+    medians = [np.median(d) for d in datasets]
+
     positions = np.arange(1, len(datasets) + 1)
 
     vp = ax.violinplot(
         datasets,
         positions=positions,
         showmeans=False,
-        showmedians=True,
+        showmedians=False if (args.half_violin or not args.show_median) else True,
         showextrema=False,
     )
+
+    # Optionally collapse one side of each violin so it is not mirrored
+    if args.half_violin:
+        for body in vp["bodies"]:
+            verts = body.get_paths()[0].vertices
+            xs = verts[:, 0]
+            center = (xs.max() + xs.min()) / 2.0
+            # Collapse everything left of the center onto the center
+            verts[xs < center, 0] = center
+
+    # Optionally draw median lines. For half violins, restrict the line
+    # to the visible (non-collapsed) half so it doesn't span both sides.
+    if args.show_median and args.half_violin:
+        for i, (body, median) in enumerate(zip(vp["bodies"], medians)):
+            verts = body.get_paths()[0].vertices
+            xs = verts[:, 0]
+            x_left = positions[i]
+            # make x_right a bit smaller so line is fully inside violin
+            x_right = xs.max() - (xs.max() - xs.min()) * 0.25
+            ax.hlines(median, x_left, x_right, colors="black", linewidth=1)
 
     # Set x-axis labels corresponding to each dataset/shifted position
     ax.set_xticks(positions)

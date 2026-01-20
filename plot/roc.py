@@ -113,7 +113,7 @@ def main():
     curves.sort(key=lambda x: x[0], reverse=True)
 
     for auc, fpr, tpr, label in curves:
-        plt.plot(fpr, tpr, label=f"{label} (AUC={auc:.3f})")
+        plt.plot(fpr, tpr, label=f"{label} (auROC={auc:.3f})")
     if args.reference:
         plt.plot([0, 1], [0, 1], "k--", alpha=0.5)
     plt.xlabel("False Positive Rate")

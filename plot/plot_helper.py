@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
+import math
 
 def format_ax(ax, args):
     ax.spines['top'].set_visible(False)
@@ -25,18 +26,18 @@ def format_ax(ax, args):
         if ';' in args.title:
             text, size, loc = args.title.split(';')
             fontdict = {'fontsize':int(size)}
-            ax.set_title(text,
+            ax.set_title(text.replace('\\n', '\n'),
                          fontdict=fontdict,
                          loc=loc,
                          color=args.axis_color)
         else:
-            ax.set_title(args.title, color=args.axis_color)
+            ax.set_title(args.title.replace('\\n', '\n'), color=args.axis_color, fontsize=args.fontsize if hasattr(args, 'fontsize') else 12)
 
     if args.xlabel:
-        ax.set_xlabel(args.xlabel, color=args.axis_color)
+        ax.set_xlabel(args.xlabel, color=args.axis_color, fontsize=math.ceil(args.fontsize*0.8) if hasattr(args, 'fontsize') else 10)
 
     if args.ylabel:
-        ax.set_ylabel(args.ylabel, color=args.axis_color)
+        ax.set_ylabel(args.ylabel, color=args.axis_color, fontsize=math.ceil(args.fontsize*0.8) if hasattr(args, 'fontsize') else 10)
 
     if args.noxticks:
         ax.tick_params(axis='x', which='both',length=0)
@@ -86,6 +87,7 @@ def format_ax(ax, args):
             # otherwise asssume csv string
             for hv in [float(x) for x in args.axvline.split(",")]:
                 ax.axvline(x=hv, lw=0.5, color=args.axis_color)
+                print(hv)
 
     if args.xticks:
         x_tick_lables = args.xticks.split(',') 
