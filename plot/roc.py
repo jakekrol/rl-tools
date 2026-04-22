@@ -4,6 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, roc_auc_score
+import pandas as pd
 
 
 p = argparse.ArgumentParser(
@@ -60,15 +61,40 @@ p.add_argument(
     , action="store_true",
     help="Plot tpr=fpr line for baseline reference."
 )
+p.add_argument(
+    "--header",
+    action="store_true",
+    help="Whether the score files have a header row to skip.",
+)
+p.add_argument(
+    "--score_col",
+    type=int,
+    default=0,
+    help="0-indexed column number of the score in the input files (default: 0).",
+)
+p.add_argument(
+    "--label_col",
+    type=int,
+    default=1,
+    help="0-indexed column number of the label in the input files (default: 1)."
+)
+p.add_argument(
+    "--verbose",
+    action="store_true",
+    help="Print additional information during processing.",
+)
 
 
-def load_scores_and_labels(path, score_col=0, label_col=1):
-    # Let numpy treat any whitespace as delimiter (works for space/TSV)
-    data = np.loadtxt(path, dtype=float)
-    if data.ndim == 1:
-        raise ValueError(f"File '{path}' must have at least two columns (score, label).")
-    y_score = data[:, score_col]
-    y_true = data[:, label_col]
+def load_scores_and_labels(path, score_col=0, label_col=1,header=False):
+    data = pd.read_csv(
+        path,
+        sep=None,
+        engine="python",
+        header=0 if header else None,
+        usecols=[score_col, label_col],
+    )
+    y_score = data.iloc[:, 0].astype(float).to_numpy()
+    y_true = data.iloc[:, 1].astype(float).to_numpy()
     return y_score, y_true
 
 
@@ -99,7 +125,9 @@ def main():
     curves = []
 
     for idx, score_path in enumerate(score_paths):
-        y_score, y_true = load_scores_and_labels(score_path, score_col=0, label_col=1)
+        if args.verbose:
+            print(f"# score path: {score_path}")
+        y_score, y_true = load_scores_and_labels(score_path, score_col=args.score_col, label_col=args.label_col, header=args.header)
         y_score = np.asarray(y_score, dtype=float)
         y_true = np.asarray(y_true, dtype=float)
         if args.flip:

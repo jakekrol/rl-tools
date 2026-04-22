@@ -71,6 +71,18 @@ p.add_argument(
     action="store_true",
     help="Show median line in violin plots."
 )
+p.add_argument(
+    "--y_min",
+    type=float,
+    default=None,
+    help="Minimum y-axis limit (default: auto)."
+)
+p.add_argument(
+    "--y_max",
+    type=float,
+    default=None,
+    help="Maximum y-axis limit (default: auto)."
+)
 
 def load_values(path):
     data = np.loadtxt(path, dtype=float)
@@ -153,6 +165,11 @@ def main():
     ax.set_xlabel(args.xlabel)
     ax.set_ylabel(args.ylabel)
     ax.set_title(args.title)
+    if args.y_min is not None:
+        ax.set_ylim(bottom=args.y_min)
+    if args.y_max is not None:
+        ax.set_ylim(top=args.y_max)
+
 
     plt.tight_layout()
     plt.savefig(args.output, dpi=300)
