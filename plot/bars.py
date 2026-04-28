@@ -6,7 +6,7 @@ import plot_helper
 import numpy as np
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Plot a line graph')
+    parser = argparse.ArgumentParser(description='Plot a bar graph')
 
     plot_helper.add_plot_args(parser)
 
@@ -18,6 +18,8 @@ def get_args():
     parser.add_argument("--bar_color",
                         default="black",
                         help="Bar color")
+    parser.add_argument("--include-count",
+                        action="store_true")
 
     return parser.parse_args()
 
@@ -45,14 +47,21 @@ def main():
         bar_color=bar_color.split(',')
         for i in range(len(X)):
             ax.bar([X[i],
-                   X[i]],
-                   [0,Y[i]],
-                   color=bar_color[i])
+                X[i]],
+                [0,Y[i]],
+                color=bar_color[i])
+            if args.include_count:
+                ax.text(X[i], Y[i], str(Y[i]), ha='center', va='bottom')
     else:
         # ax.bar(X, Y, color=bar_color)
         # rotate the x-ticks 
-        ax.bar(X, Y, color=bar_color, width=0.5)
-        ax.set_xticklabels(X, rotation=45, ha='right')
+        if args.include_count:
+            ax.bar(X, Y, color=bar_color)
+            for i in range(len(X)):
+                ax.text(X[i], Y[i], str(Y[i]), ha='center', va='bottom')
+        else:
+            ax.bar(X, Y, color=bar_color, width=0.5)
+            ax.set_xticklabels(X, rotation=45, ha='right')
 
 
     plot_helper.format_ax(ax, args)
